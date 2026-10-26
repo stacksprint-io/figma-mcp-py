@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 from fastmcp import FastMCP
 from fastmcp.utilities.types import Image
 
-from . import simplify
-from .figma import Figma, file_key
+from figma_mcp import simplify
+from figma_mcp.figma import Figma, file_key
 
 load_dotenv()  # FIGMA_TOKEN from .env, if you keep it there
 CACHE = Path(os.environ.get("FIGMA_CACHE", Path(__file__).resolve().parent.parent / ".cache"))
@@ -62,4 +62,4 @@ def render_frame(file_url: str, frame_id: str) -> Image:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(show_banner=False)
