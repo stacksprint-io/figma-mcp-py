@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "figma-mcp-py"
+version = "0.1.0"
+description = "A small, read-only Figma MCP server in Python (FastMCP): gives Claude a design's layout, tokens, icons and a picture of the frame, so it can build the page."
+requires-python = ">=3.12"
+dependencies = [
+  "fastmcp>=4,<5",
+  "httpx",
+  "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools]
+packages = ["figma_mcp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"

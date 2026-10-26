@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "figma": {
+      "command": ".venv/bin/python",
+      "args": ["-m", "figma_mcp.server"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@0.0.83", "--headless", "--viewport-size", "1440,900"]
+    }
+  }
+}
