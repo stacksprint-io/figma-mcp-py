@@ -2,7 +2,7 @@
 
 A small Figma MCP server in Python, built with [FastMCP](https://gofastmcp.com). It gives Claude a design it can build from: the layout as flexbox, the colour and text styles as CSS variables, the icons as SVG, and a picture of the frame to compare against.
 
-It is five read-only tools in about 250 lines of Python, so you can read all of it, change what Claude sees, and run it on Figma's free plan.
+It is five read-only tools in about 280 lines of Python, so you can read all of it, change what Claude sees, and run it on Figma's free plan.
 
 ![The Tallyhive landing-page mock this repo is tested against](docs/mock.png)
 

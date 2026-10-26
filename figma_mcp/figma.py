@@ -1,7 +1,9 @@
-"""Talking to Figma: three REST calls (the file, a PNG of a frame, its icons as SVG), all cached on disk.
+"""Talking to Figma: three REST calls, every response cached on disk.
 
-Figma's free plan allows very few file reads a month, so every response is saved under .cache/
-and read from there afterwards. Delete the cache (or pass refresh=True) to fetch again.
+The three calls: the file, a PNG of a frame, and the frame's icons as SVG.
+Figma's free plan allows very few file reads a month, so every response is
+saved under .cache/ and read from there afterwards. Delete the cache (or pass
+refresh=True) to fetch again.
 """
 
 from __future__ import annotations
@@ -32,7 +34,8 @@ class Figma:
         if not self.token:
             raise RuntimeError("FIGMA_TOKEN is not set and this file isn't cached yet.")
         print(f"figma: GET {path}", file=sys.stderr)  # every real call is logged
-        r = httpx.get(f"{API}{path}", params=params, headers={"X-Figma-Token": self.token}, timeout=60)
+        headers = {"X-Figma-Token": self.token}
+        r = httpx.get(f"{API}{path}", params=params, headers=headers, timeout=60)
         r.raise_for_status()
         return r
 
@@ -47,18 +50,19 @@ class Figma:
         """A frame rendered as PNG (one call for the URL, then cached)."""
         path = self.cache / f"{key}-{node_id.replace(':', '-')}.png"
         if refresh or not path.exists():
-            url = self._get(f"/images/{key}", ids=node_id, format="png", scale=1).json()["images"][node_id]
+            r = self._get(f"/images/{key}", ids=node_id, format="png", scale=1)
+            url = r.json()["images"][node_id]
             path.write_bytes(httpx.get(url, timeout=60).content)
         return path.read_bytes()
 
-    def svgs(self, key: str, node_ids: list[str], refresh: bool = False) -> dict[str, str]:
+    def svgs(self, key: str, node_ids: list[str], refresh: bool = False) -> dict:
         """Several nodes exported as SVG in one call, then cached."""
         path = self.cache / f"{key}-icons.json"
         cached = {} if refresh or not path.exists() else json.loads(path.read_text())
         missing = [i for i in node_ids if i not in cached]
         if missing:
-            urls = self._get(f"/images/{key}", ids=",".join(missing), format="svg").json()["images"]
-            for i, url in urls.items():
+            r = self._get(f"/images/{key}", ids=",".join(missing), format="svg")
+            for i, url in r.json()["images"].items():
                 cached[i] = httpx.get(url, timeout=60).text
             path.write_text(json.dumps(cached))
         return {i: cached[i] for i in node_ids}

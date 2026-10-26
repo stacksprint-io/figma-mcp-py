@@ -1,7 +1,7 @@
 """From Figma's file JSON to what a developer needs to build the page.
 
-Figma describes every node with dozens of fields. Claude needs the layout (auto layout becomes
-flexbox), the text, the colours and the sizes. Everything else is dropped.
+Figma describes every node with dozens of fields. Claude needs the layout (auto
+layout becomes flexbox), the text, the colours and the sizes. The rest is dropped.
 """
 
 from __future__ import annotations
@@ -20,8 +20,10 @@ def solid_fill(paints: list[dict]) -> str | None:
     return None
 
 
-JUSTIFY = {"MIN": "start", "CENTER": "center", "MAX": "end", "SPACE_BETWEEN": "space-between"}
+JUSTIFY = {"MIN": "start", "CENTER": "center", "MAX": "end",
+           "SPACE_BETWEEN": "space-between"}
 ALIGN = {"MIN": "start", "CENTER": "center", "MAX": "end", "BASELINE": "baseline"}
+PADDING = ("paddingTop", "paddingRight", "paddingBottom", "paddingLeft")
 
 
 def node(n: dict, styles: dict) -> dict | None:
@@ -30,7 +32,8 @@ def node(n: dict, styles: dict) -> dict | None:
         return None
     box = n.get("absoluteBoundingBox") or {}
     size = [round(box.get("width", 0)), round(box.get("height", 0))]
-    if n["name"].startswith("Icon /"):  # an icon is one asset, not its vector paths: export_icons gives the SVG
+    if n["name"].startswith("Icon /"):
+        # an icon is one asset, not its vector paths: export_icons gives the SVG
         return {"name": n["name"], "type": "icon", "id": n["id"], "size": size}
     out: dict = {"name": n["name"], "type": n["type"].lower(), "size": size}
 
@@ -38,7 +41,7 @@ def node(n: dict, styles: dict) -> dict | None:
         out["flex"] = {
             "direction": "row" if n["layoutMode"] == "HORIZONTAL" else "column",
             "gap": n.get("itemSpacing", 0),
-            "padding": [n.get(k, 0) for k in ("paddingTop", "paddingRight", "paddingBottom", "paddingLeft")],
+            "padding": [n.get(k, 0) for k in PADDING],
             "justify": JUSTIFY.get(n.get("primaryAxisAlignItems", "MIN")),
             "align": ALIGN.get(n.get("counterAxisAlignItems", "MIN")),
         }
@@ -55,7 +58,12 @@ def node(n: dict, styles: dict) -> dict | None:
     if n["type"] == "TEXT":
         s = n.get("style", {})
         out["text"] = n.get("characters", "")
-        out["font"] = {"family": s.get("fontFamily"), "size": s.get("fontSize"), "weight": s.get("fontWeight"), "lineHeight": round(s.get("lineHeightPx", 0))}
+        out["font"] = {
+            "family": s.get("fontFamily"),
+            "size": s.get("fontSize"),
+            "weight": s.get("fontWeight"),
+            "lineHeight": round(s.get("lineHeightPx", 0)),
+        }
         if s.get("textAlignHorizontal") not in (None, "LEFT"):
             out["textAlign"] = s["textAlignHorizontal"].lower()
         del out["size"]
@@ -81,16 +89,19 @@ def find(n: dict, node_id: str) -> dict | None:
 
 def frames(doc: dict) -> list[dict]:
     """Top-level frames on every page: what you'd hand to a developer."""
-    return [
-        {"page": p["name"], "id": f["id"], "name": f["name"], "size": [round(f["absoluteBoundingBox"]["width"]), round(f["absoluteBoundingBox"]["height"])]}
-        for p in doc["document"]["children"]
-        for f in p.get("children", [])
-        if f["type"] in ("FRAME", "COMPONENT", "SECTION")
-    ]
+    out = []
+    for page in doc["document"]["children"]:
+        for f in page.get("children", []):
+            if f["type"] in ("FRAME", "COMPONENT", "SECTION"):
+                box = f["absoluteBoundingBox"]
+                size = [round(box["width"]), round(box["height"])]
+                out.append({"page": page["name"], "id": f["id"], "name": f["name"],
+                            "size": size})
+    return out
 
 
 def tokens(doc: dict) -> dict:
-    """Colour and text styles as CSS custom properties, read from the nodes that use them."""
+    """Colour and text styles as CSS custom properties, from the nodes that use them."""
     styles, seen = doc.get("styles", {}), {}
 
     def walk(n: dict) -> None:
@@ -100,13 +111,18 @@ def tokens(doc: dict) -> dict:
                     seen[sid] = c
                 elif kind == "text" and n.get("style"):
                     s = n["style"]
-                    seen[sid] = f"{s['fontWeight']} {round(s['fontSize'])}px/{round(s['lineHeightPx'])}px {s['fontFamily']}"
+                    size, line = round(s["fontSize"]), round(s["lineHeightPx"])
+                    seen[sid] = f"{s['fontWeight']} {size}px/{line}px {s['fontFamily']}"
         for k in n.get("children", []):
             walk(k)
 
     walk(doc["document"])
-    slug = lambda name: name.lower().replace(" ", "-").replace("/", "-")
-    return {f"--{'color' if styles[sid]['styleType'] == 'FILL' else 'font'}-{slug(styles[sid]['name'])}": v for sid, v in seen.items()}
+    out = {}
+    for sid, value in seen.items():
+        kind = "color" if styles[sid]["styleType"] == "FILL" else "font"
+        name = styles[sid]["name"].lower().replace(" ", "-").replace("/", "-")
+        out[f"--{kind}-{name}"] = value
+    return out
 
 
 def icons(n: dict) -> list[dict]:

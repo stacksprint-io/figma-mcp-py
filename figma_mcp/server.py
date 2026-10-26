@@ -1,7 +1,8 @@
-"""A Figma MCP server: five read-only tools that give Claude a design it can build from.
+"""A Figma MCP server: five read-only tools that give Claude a design to build from.
 
 Run: python -m figma_mcp.server   (stdio; register with `claude mcp add`)
-Needs FIGMA_TOKEN (a read-only personal access token, in the environment or in .env) the first time a file is read.
+Needs FIGMA_TOKEN (a read-only personal access token, in the environment or in
+.env) the first time a file is read.
 """
 
 from __future__ import annotations
@@ -17,21 +18,24 @@ from figma_mcp import simplify
 from figma_mcp.figma import Figma, file_key
 
 load_dotenv()  # FIGMA_TOKEN from .env, if you keep it there
-CACHE = Path(os.environ.get("FIGMA_CACHE", Path(__file__).resolve().parent.parent / ".cache"))
+ROOT = Path(__file__).resolve().parent.parent
+CACHE = Path(os.environ.get("FIGMA_CACHE", ROOT / ".cache"))
 figma = Figma(os.environ.get("FIGMA_TOKEN"), CACHE)
 mcp = FastMCP("figma")
 
 
 @mcp.tool()
 def list_frames(file_url: str) -> list[dict]:
-    """The frames in a Figma file (page, id, name, size). Start here, then pass a frame id to the other tools."""
+    """The frames in a Figma file (page, id, name, size). Start here, then pass a
+    frame id to the other tools."""
     return simplify.frames(figma.file(file_key(file_url)))
 
 
 @mcp.tool()
 def get_layout(file_url: str, frame_id: str) -> dict:
-    """One frame as a compact layout tree: auto layout as flexbox (direction, gap, padding, justify, align),
-    text with its font, colours as hex, sizes in px. Build the page from this."""
+    """One frame as a compact layout tree: auto layout as flexbox (direction, gap,
+    padding, justify, align), text with its font, colours as hex, sizes in px.
+    Build the page from this."""
     doc = figma.file(file_key(file_url))
     frame = simplify.find(doc["document"], frame_id)
     if frame is None:
@@ -47,7 +51,8 @@ def get_tokens(file_url: str) -> dict:
 
 @mcp.tool()
 def export_icons(file_url: str, frame_id: str) -> dict[str, str]:
-    """Every icon in the frame as inline SVG, keyed by the icon's name. Paste them into the page as-is."""
+    """Every icon in the frame as inline SVG, keyed by the icon's name. Paste them
+    into the page as-is."""
     key = file_key(file_url)
     frame = simplify.find(figma.file(key)["document"], frame_id)
     found = simplify.icons(frame)
@@ -57,7 +62,8 @@ def export_icons(file_url: str, frame_id: str) -> dict[str, str]:
 
 @mcp.tool()
 def render_frame(file_url: str, frame_id: str) -> Image:
-    """A picture of the frame (PNG), so you can see the design you're building and compare against it."""
+    """A picture of the frame (PNG), so you can see the design you're building and
+    compare against it."""
     return Image(data=figma.frame_png(file_key(file_url), frame_id), format="png")
 
 
