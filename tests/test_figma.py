@@ -11,7 +11,7 @@ from .conftest import FIXTURES
     "https://www.figma.com/file/TallyhiveDemoFile01/Tallyhive",
     "figma.com/proto/TallyhiveDemoFile01/Tallyhive",
     "TallyhiveDemoFile01",
-])
+], ids=["design-link", "file-link", "proto-link", "bare-key"])
 def test_file_key_from_any_link(url):
     assert file_key(url) == "TallyhiveDemoFile01"
 

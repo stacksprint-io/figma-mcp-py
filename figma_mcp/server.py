@@ -39,13 +39,13 @@ def get_layout(file_url: str, frame_id: str) -> dict:
     doc = figma.file(file_key(file_url))
     frame = simplify.find(doc["document"], frame_id)
     if frame is None:
-        raise ValueError(f"No frame {frame_id} in this file. Call list_frames first.")
+        raise ValueError(f"No frame {frame_id} here. Call list_frames first.")
     return simplify.node(frame, doc.get("styles", {}))
 
 
 @mcp.tool()
 def get_tokens(file_url: str) -> dict:
-    """The file's colour and text styles as CSS custom properties, to put in :root."""
+    """The file's colour and text styles as CSS custom properties, for :root."""
     return simplify.tokens(figma.file(file_key(file_url)))
 
 

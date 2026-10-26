@@ -19,7 +19,7 @@ API = "https://api.figma.com/v1"
 
 
 def file_key(url_or_key: str) -> str:
-    """The file key from a Figma link (figma.com/design/<key>/...) or the key itself."""
+    """The file key from a Figma link (figma.com/design/<key>/...), or the key."""
     m = re.search(r"figma\.com/(?:design|file|proto)/([A-Za-z0-9]+)", url_or_key)
     return m.group(1) if m else url_or_key.strip()
 
@@ -32,7 +32,7 @@ class Figma:
 
     def _get(self, path: str, **params) -> httpx.Response:
         if not self.token:
-            raise RuntimeError("FIGMA_TOKEN is not set and this file isn't cached yet.")
+            raise RuntimeError("FIGMA_TOKEN isn't set and this file isn't cached.")
         print(f"figma: GET {path}", file=sys.stderr)  # every real call is logged
         headers = {"X-Figma-Token": self.token}
         r = httpx.get(f"{API}{path}", params=params, headers=headers, timeout=60)

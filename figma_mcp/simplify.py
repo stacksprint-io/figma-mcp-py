@@ -10,7 +10,8 @@ from __future__ import annotations
 def hex_color(c: dict, opacity: float = 1.0) -> str:
     r, g, b = (round(c[k] * 255) for k in "rgb")
     a = c.get("a", 1) * opacity
-    return f"#{r:02X}{g:02X}{b:02X}" + ("" if a >= 0.999 else f"{round(a * 255):02X}")
+    alpha = "" if a >= 0.999 else f"{round(a * 255):02X}"
+    return f"#{r:02X}{g:02X}{b:02X}{alpha}"
 
 
 def solid_fill(paints: list[dict]) -> str | None:
@@ -101,7 +102,7 @@ def frames(doc: dict) -> list[dict]:
 
 
 def tokens(doc: dict) -> dict:
-    """Colour and text styles as CSS custom properties, from the nodes that use them."""
+    """Colour and text styles as CSS custom properties."""
     styles, seen = doc.get("styles", {}), {}
 
     def walk(n: dict) -> None:
@@ -112,7 +113,8 @@ def tokens(doc: dict) -> dict:
                 elif kind == "text" and n.get("style"):
                     s = n["style"]
                     size, line = round(s["fontSize"]), round(s["lineHeightPx"])
-                    seen[sid] = f"{s['fontWeight']} {size}px/{line}px {s['fontFamily']}"
+                    family = s["fontFamily"]
+                    seen[sid] = f"{s['fontWeight']} {size}px/{line}px {family}"
         for k in n.get("children", []):
             walk(k)
 
