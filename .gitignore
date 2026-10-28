@@ -7,3 +7,4 @@ __pycache__/
 .cache/
 .playwright-mcp/
 .claude/settings.local.json
+site/
