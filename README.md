@@ -89,13 +89,19 @@ Serve an empty `site/` folder (`cd site && python3 -m http.server 8765`), then g
 
 > Build the landing page in this Figma file as site/index.html: `<your Figma link>`. Use the figma tools to read the frames, the layout, the tokens, the icons and the picture. Plain HTML with Bootstrap 5 from the CDN and a small style block using the tokens as CSS variables; no build step. A server is already serving the site folder at http://127.0.0.1:8765/ (don't start one). When it's written, open it with the playwright tools at 1440 wide, take a screenshot, compare it with the Figma picture, fix what differs, and list what you fixed.
 
-On the Tallyhive mock this produces one HTML file whose sections match the frame's heights to the pixel at 1440 wide. In our test run the compare step found and fixed one real difference: the featured pricing card's 2 px border sits outside its padding in Figma, so the card is 380×372, not 378×370.
+On the Tallyhive mock this produces one HTML file whose sections match the frame's heights to the pixel at 1440 wide (102, 518, 338, 640 and 92 px, 1690 in all).
+
+![The Figma frame next to the page Claude Code built from it, at 1440 wide](docs/mock-vs-built.png)
+
+In the run recorded for the video, the compare step found and fixed two things: a negative letter-spacing Claude had added itself, which made the headline about 27 px narrower than in Figma, and a `favicon.ico` 404 in the console. Runs differ; an earlier run found the featured pricing card's 2 px border instead.
 
 ## Limits
 
 - It reads one frame at a time and only solid fills. Gradients, images, effects (shadows, blur), components and variants aren't simplified yet; add them in `simplify.node` if your designs need them.
 - Fonts are reported by family, size, weight and line height. The page still has to load the font itself (the Tallyhive mock uses Inter).
 - Icons are found by name: a node named `Icon / <something>` is exported as one SVG.
+- Text nodes keep their characters and font but not their box size, so Claude picks text widths itself (it capped the Tallyhive headline at 800 px). If your design needs exact text widths, keep `size` for text nodes in `simplify.node`.
+- Claude only sees the frames you draw. With a desktop frame alone, the narrow-screen layout is its own guess; draw a mobile frame if you want that right.
 
 ## License
 
